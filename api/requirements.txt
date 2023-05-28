@@ -1,0 +1,12 @@
+emoji==0.6.0
+black==22.3.0
+fastapi==0.88.0
+mangum==0.14.0
+numpy==1.22.3
+pydantic==1.9.1
+pymongo==4.1.1
+pytz==2021.3
+sentence_transformers==2.2.2
+torch==1.12.1
+transformers==4.22.0
+uvicorn==0.15.0

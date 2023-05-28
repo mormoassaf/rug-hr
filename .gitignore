@@ -1,0 +1,9 @@
+datasets
+*wandb*
+models
+.idea
+
+*ipynb_checkpoints*
+*.pyc
+*~
+*.swp
