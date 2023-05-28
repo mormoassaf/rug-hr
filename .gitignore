@@ -2,7 +2,8 @@ datasets
 *wandb*
 models
 .idea
-
+artifacts
+models
 *ipynb_checkpoints*
 *.pyc
 *~
