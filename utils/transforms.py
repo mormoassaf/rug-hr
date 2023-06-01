@@ -43,7 +43,6 @@ def set_adaptive_threshold(acc):
                 num_pixels_per_symbol.append(len(visited_positions))
 
     num_pixels_per_symbol = np.sort(num_pixels_per_symbol)
-    print(num_pixels_per_symbol)
 
     fourier = np.fft.fft(num_pixels_per_symbol)
     freqs = np.fft.fftfreq(len(num_pixels_per_symbol))

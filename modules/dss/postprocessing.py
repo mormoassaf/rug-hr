@@ -19,6 +19,10 @@ import math
 
 from typing import List, Tuple, Optional
 
+hebrew_chars = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י",
+                "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ", "ק", "ר",
+                "ש", "ת", "ך", "ם", "ן", "ף", "ץ"]
+
 
 class Point:
     def __init__(self, x, y, label):
@@ -173,9 +177,6 @@ def transcribe_image(image) -> str:
 
 
 if __name__ == '__main__':
-    hebrew_chars = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י",
-                    "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ", "ק", "ר",
-                    "ש", "ת", "ך", "ם", "ן", "ף", "ץ"]
 
     masks_folder = "experiments/Masks/"
     masks = os.listdir(masks_folder)
