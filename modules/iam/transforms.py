@@ -125,21 +125,27 @@ class AddMaskd(MapTransform):
     
 # Transofrmation that resizes teh axis to a number while keeping the aspect ratio
 class ResizeAxis(Transform):
-    def __init__(self, axis, size):
+    def __init__(self, axis, size, scale_axes=tuple(range(1, 4))):
         self.axis = axis
         self.size = size
+        self.scale_axes = scale_axes
 
     def __call__(self, data):
         shape = data.shape
         scale = self.size / shape[self.axis]
-        new_shape = [int(shape[i] * scale) for i in range(len(shape))]
+        new_shape = list(shape)
+        for i in self.scale_axes:
+            if i == self.axis:
+                new_shape[i] = self.size
+            else:
+                new_shape[i] = int(shape[i] * scale)
         data = resize(data, new_shape, anti_aliasing=False)
         return torch.tensor(data, dtype=torch.float32)
 
 class ResizeAxisd(MapTransform):
-    def __init__(self, keys, axis, size):
+    def __init__(self, keys, axis, size, scale_axes=tuple(range(1, 4))):
         super().__init__(keys)
-        self.resize_axis = ResizeAxis(axis, size)
+        self.resize_axis = ResizeAxis(axis, size, scale_axes)
 
     def __call__(self, data):
         d = dict(data)
@@ -160,7 +166,7 @@ pre_transforms = Compose([
     Binarized(keys=["img"]),
     CropForegroundd(keys=["img"], source_key="img"),
     Invertd(keys=["img"]),
-    ResizeAxisd(keys=["img"], axis=-2, size=128),
+    ResizeAxisd(keys=["img"], axis=-2, size=128, scale_axes=[-1, -2]),
     AddMaskd(
         keys=["img"], 
         prob=0.0, 
