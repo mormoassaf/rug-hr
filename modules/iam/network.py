@@ -31,7 +31,7 @@ class SegLMIAM(UNETR):
         self.inferer = SlidingWindowInferer(roi_size=SPATIAL_SIZE, sw_batch_size=sw_batch_size, overlap=0.8)
         self.pool1 = ModePool2D(kernel_size=3, stride=2, padding=1)
         self.pool2 = ModePool2D(kernel_size=3, stride=2, padding=1)
-        self.pool3 = ModePool2D(kernel_size=9, stride=1, padding=1)
+        self.pool3 = ModePool2D(kernel_size=3, stride=1, padding=1)
 
     def __get_device(self):
         return next(self.parameters()).device
@@ -86,8 +86,8 @@ class SegLMIAM(UNETR):
         # post process
         if argmax:            
             outputs = outputs.argmax(dim=1, keepdim=True).float()
-            outputs = self.pool1(outputs)
-            outputs = self.pool2(outputs)
+            # outputs = self.pool1(outputs)
+            # outputs = self.pool2(outputs)
             # outputs = self.pool3(outputs)
 
         # remove channel dimension
