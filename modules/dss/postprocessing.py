@@ -1,28 +1,12 @@
-import os
-
-# ensure is in parent directory
-try:
-    os.chdir("../../RUG-HandRec/")
-except:
-    pass
-
-from PIL import Image
-from collections import defaultdict
 
 from scipy.ndimage import label, center_of_mass
 from scipy.spatial.distance import cdist
-from utils.transforms import remove_ornaments, set_adaptive_threshold
 import matplotlib.pyplot as plt
-
 import numpy as np
-import math
 
-from typing import List, Tuple, Optional
-
-hebrew_chars = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י",
+HEBREW_CHARS = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י",
                 "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ", "ק", "ר",
                 "ש", "ת", "ך", "ם", "ן", "ף", "ץ"]
-
 
 class Point:
     def __init__(self, x, y, label):
@@ -33,6 +17,74 @@ class Point:
     def __repr__(self):
         return f'Point({self.x}, {self.y}, "{self.label}")'
 
+def walk_char(acc, i, j, visited_symbols=[], visited_acc=None):
+    stack = [(i, j)]
+    while stack:
+        i, j = stack.pop()
+        # check if i and j are within bounds
+        if i < 0 or i >= acc.shape[0] or j < 0 or j >= acc.shape[1]:
+            continue
+
+        # if visited or reached a background pixel then return
+        if acc[i, j] == 0 or visited_acc[i, j] == 1:
+            continue
+
+        visited_acc[i, j] = 1  # visited
+        visited_symbols.append((i, j))
+
+        stack.append((i - 1, j))
+        stack.append((i + 1, j))
+        stack.append((i, j - 1))
+        stack.append((i, j + 1))
+
+
+def set_adaptive_threshold(acc):
+    num_pixels_per_symbol = []
+    visited_acc = np.zeros_like(acc)
+    for i in range(acc.shape[0]):
+        for j in range(acc.shape[1]):
+            if acc[i, j] == 1 and visited_acc[i, j] == 0:
+                visited_positions = []
+                walk_char(acc, i, j, visited_positions, visited_acc=visited_acc)
+                num_pixels_per_symbol.append(len(visited_positions))
+
+    num_pixels_per_symbol = np.sort(num_pixels_per_symbol)
+
+    fourier = np.fft.fft(num_pixels_per_symbol)
+    freqs = np.fft.fftfreq(len(num_pixels_per_symbol))
+    fourier[freqs > 0.1] = 0
+    num_pixels_per_symbol = np.fft.ifft(fourier)
+    num_pixels_per_symbol = np.real(num_pixels_per_symbol)
+    num_pixels_per_symbol[num_pixels_per_symbol < 0] = 0
+    num_pixels_per_symbol = np.round(num_pixels_per_symbol).astype(np.uint8)
+
+    threshold = num_pixels_per_symbol[-1]
+
+    return threshold
+
+
+def remove_ornaments(page, threshold=10):
+    acc = page.copy()
+    visited_acc = np.zeros_like(acc)
+    delete_list = []
+
+    for i in range(acc.shape[0]):
+        for j in range(acc.shape[1]):
+            if acc[i, j] == 1 and visited_acc[i, j] == 0:
+
+                visited_positions = []
+                walk_char(acc, i, j, visited_positions, visited_acc=visited_acc)
+
+                if len(visited_positions) < threshold:
+                    delete_list.extend(visited_positions)
+
+            visited_acc[i, j] = 1  # visited
+
+    for i, j in delete_list:
+        acc[i, j] = 0
+    acc = (acc > 0)
+    acc = acc.astype(np.uint8)
+    return acc
 
 def find_centers_of_characters(img: np.ndarray, distance_threshold=0):
     unique_values = np.unique(img)
@@ -70,123 +122,163 @@ def find_centers_of_characters(img: np.ndarray, distance_threshold=0):
 
     return points
 
-
-def plot_points_on_image(img: np.ndarray, points, label_to_color):
-    plt.figure(figsize=(10, 10))  # Set the figure size, you can adjust this as needed
-    plt.imshow(img, cmap='gray')  # Display the image in grayscale
-
-    for point in points:
-        plt.scatter(point.y, point.x, s=5, color=label_to_color[str(point.label)])
-
-    plt.show()  # show the plot
-
-
-def greate_graph(points):
-    graph = defaultdict(list)
-    for i, point in enumerate(points):
-        for j, other_point in enumerate(points):
-            if i == j:
+def construct_graph(points, dist_x=50, dist_y=250):
+    graph = {}
+    for u in points:
+        graph[u] = []
+        for v in points:
+            if u == v:
                 continue
-            angle = math.atan2(other_point.y - point.y, other_point.x - point.x)
-            graph[point].append((other_point, angle))
+
+            d_x = abs(u.x - v.x)
+            d_y = abs(u.y - v.y)
+            
+            if d_x <= dist_x and d_y <= dist_y:
+                graph[u].append(v)
     return graph
 
+def plot_graph(img: np.ndarray, graph, label_to_color):
+    plt.figure(figsize=(10, 10))  # Set the figure size, you can adjust this as needed
+    plt.imshow(-img, cmap='CMRmap')  # Display the image in grayscale
 
-# TODO rewrite using Point class
-def distance_between_points(p1: Tuple[int, int], p2: Tuple[int, int]) -> float:
-    return math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2)
+    for u, neighbors in graph.items():
+        for v in neighbors:
+            plt.plot([u.y, v.y], [u.x, v.x], color=label_to_color[str(u.label)], alpha=0.1)
 
+    # tick y every 50 pixels
+    plt.yticks(np.arange(0, img.shape[0], 50))
+    plt.show()  # show the plot
 
-def find_starting_point(points: List[Tuple[int, int]]) -> Optional[Tuple[int, int]]:
-    try:
-        anchor_point = (1500, 0)
-        return min(points, key=lambda point: distance_between_points(anchor_point, point))
-    except ValueError:
-        print("No starting point found")
-        return None
+def estimate_line_spacing(img):
+    histogram = np.sum(img, axis=1)
+    histogram[histogram < histogram.mean()] = 0
 
+    # Compute the frequencies using np.fft.fftfreq
+    num_samples = len(histogram)
+    frequencies = np.fft.fftfreq(num_samples)
 
-def find_next_point_in_line(current_point: Tuple[int, int], points: List[Tuple[int, int]],
-                            angle_threshold=50) -> Optional[Tuple[int, int]]:
-    points_on_left = [point for point in points if point[0] < current_point[0] and abs(
-        point[1] - current_point[1]) < angle_threshold]
-    return min(points_on_left, key=lambda point: distance_between_points(current_point, point),
-               default=None)
+    # Perform a Fourier Transform on the histogram
+    fft_result = np.fft.fft(histogram)
+    fft_magnitude = np.abs(fft_result)
 
+    # Exclude the first element (corresponding to the DC component)
+    frequencies = frequencies[1:]
+    fft_magnitude = fft_magnitude[1:]
 
-def find_next_line_start(points: List[Tuple[int, int]], last_point: Tuple[int, int]) -> Optional[
-    Tuple[int, int]]:
-    remaining_points = [point for point in points if
-                        point[1] > last_point[1]]  # Filter points below the last point
-    return find_starting_point(remaining_points)
+    # Find the indices of the peaks corresponding to the highest frequencies
+    peak_indices = np.argsort(-fft_magnitude)
+    peak_wavelengths = 1 / np.abs(frequencies[peak_indices])
+    # Filter out values in peak_wavelengths that dont have decimals
+    peak_wavelengths = peak_wavelengths[np.where(peak_wavelengths % 1 != 0)]
 
+    top_k_wavelengths = peak_wavelengths[:3]
+    line_spacing = np.mean(top_k_wavelengths)
 
-def print_characters(points: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
-    points = [(point.y, point.x) for point in points]
-    ordered_points = []
-    start_point = find_starting_point(points)
-    if start_point is None:
-        return ordered_points
+    return line_spacing
 
-    ordered_points.append(start_point)
-    points.remove(start_point)
+def transpose_points(points):
+    return [Point(point.y, point.x, point.label) for point in points]
 
-    while points:
-        next_point = find_next_point_in_line(ordered_points[-1], points)
-        if next_point is not None:
-            ordered_points.append(next_point)
-            points.remove(next_point)
-        else:
-            next_line_start = find_next_line_start(points, ordered_points[-1])
-            if next_line_start is not None:
-                ordered_points.append(next_line_start)
-                points.remove(next_line_start)
-            else:
-                break
+def plot_lines(img: np.ndarray, lines, label_to_color):
+    plt.figure(figsize=(10, 10))  # Set the figure size, you can adjust this as needed
+    plt.imshow(-img, cmap='CMRmap')  # Display the image in grayscale
 
-    return ordered_points
+    i2color = {i: color for i, color in enumerate(label_to_color.values())}
 
+    for j, line in enumerate(lines):
+        for i in range(len(line) - 1):
+            u = line[i]
+            v = line[i + 1]
+            plt.plot([u.y, v.y], [u.x, v.x], color=i2color[j], alpha=1)
 
-def get_label_from_coords(points, center) -> Point:
-    for point in points:
-        if point.y == center[0] and point.x == center[1]:
-            return hebrew_chars[int(point.label - 1)]
-    return None
+    # plt.axis('off')  # remove the axis
+    plt.show()  # show the plot
 
+def find_best_line(graph, line):
+    """
+    Recursively find the best line 
+    Args:
+        graph: the graph
+        line: the current line so far starting with [p0, p1, ..., pn] sorted by x coordinate
+    Returns:
+        the best line starting with [starting_point], fitness of the line
+    """
 
-def transcribe_image(image) -> str:
-    binary_image = np.where(image > 0, 1, 0)
+    def get_started_points(line):
+        # Mark the ends of the line
+        starting_points = [line[-1]]
+        if len(line) != 1:
+            starting_points.append(line[-2])
+        return starting_points
+    
+    def point_in_bounds(point, line):
+        # Line bounds for pruning 
+        min_x = min([p.x for p in line])
+        max_x = max([p.x for p in line])
+        return point.x >= min_x and point.x <= max_x
+
+    prev_starting_points = None
+    starting_points = get_started_points(line)
+
+    while prev_starting_points != starting_points:
+        for starting_point in starting_points:
+            neighbors = [p for p in graph[starting_point] if not point_in_bounds(p, line)]
+
+            if len(neighbors) == 0:
+                continue
+            closest_neighbor = min(neighbors, key=lambda p: abs(p.x - starting_point.x))
+            new_line = line + [closest_neighbor]
+            new_line = sorted(new_line, key=lambda p: p.x)
+            line = new_line
+
+        prev_starting_points = starting_points
+        starting_points = get_started_points(line)
+        
+    return line
+
+def extract_lines_from_graph(graph):
+    lines = []
+    ranks = []
+
+    _graph = graph.copy()        
+    while len(_graph) > 0:
+        # take point with max y
+        starting_point = min(_graph.keys(), key=lambda p: p.x)
+        # starting_point = random.choice(list(_graph.keys()))
+        line = find_best_line(_graph, [starting_point]) 
+        rank = np.mean([p.y for p in line])
+        lines.append(line)
+        ranks.append(rank)
+
+        # remove points from graph
+        for point in line:
+            # remove references to this point
+            for neighbors in _graph.values():
+                if point in neighbors:
+                    neighbors.remove(point)
+            del _graph[point]
+
+    # sort lines by rank
+    lines = [line for _, line in sorted(zip(ranks, lines), key=lambda pair: pair[0])]
+
+    return lines
+
+def extract_lines(img):
+    binary_image = np.where(img > 0, 1, 0)
     allowed_pixels = remove_ornaments(binary_image, set_adaptive_threshold(binary_image))
-    image_without_ornaments = np.where(allowed_pixels > 0, image, 0)
-
+    image_without_ornaments = np.where(allowed_pixels > 0, img, 0)
     points = find_centers_of_characters(image_without_ornaments)
-    ordered_centers = print_characters(points)
-    indices = list(range(1, len(ordered_centers) + 1))
+    line_spacing = estimate_line_spacing(image_without_ornaments)
 
-    final_string = ""
+    points = transpose_points(points)
+    graph = construct_graph(points, dist_x=img.shape[0]//4, dist_y=line_spacing*0.4)
+    lines = extract_lines_from_graph(graph)
+    lines = [transpose_points(line) for line in lines]
+    return lines
 
-    starting_point = find_starting_point(ordered_centers)
-    for center, number in zip(ordered_centers, indices):
-        if center[0] - starting_point[0] < image.shape[0] * 0.3:
-            final_string += str(get_label_from_coords(points, center))
-        else:
-            final_string += "\n"
-        starting_point = center
-
-    return final_string
-
-
-if __name__ == '__main__':
-
-    masks_folder = "experiments/Masks/"
-    masks = os.listdir(masks_folder)
-    random_mask = np.random.choice(masks)
-    image = np.array(Image.open(masks_folder + random_mask))
-
-    # show image
-    plt.imshow(image, cmap='gray')
-    plt.show()
-
-    # transcribe image
-    transcript = transcribe_image(image)
-    print(transcript)
+def transcribe_image(img):
+    lines = extract_lines(img)
+    lines = [[HEBREW_CHARS[int(p.label)-1] for p in l] for l in lines]
+    transcription = ["".join(l) for l in lines]
+    transcription = "\n".join(transcription)
+    return transcription
