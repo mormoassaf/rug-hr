@@ -166,7 +166,7 @@ pre_transforms = Compose([
     Binarized(keys=["img"]),
     CropForegroundd(keys=["img"], source_key="img"),
     Invertd(keys=["img"]),
-    ResizeAxisd(keys=["img"], axis=-2, size=128, scale_axes=[-1, -2]),
+    ResizeAxisd(keys=["img"], axis=-2, size=100, scale_axes=[-1, -2]),
     AddMaskd(
         keys=["img"], 
         prob=0.0, 

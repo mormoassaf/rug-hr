@@ -276,6 +276,9 @@ def transcribe_image(img):
     # Take mode across axis 0
     votes = np.apply_along_axis(lambda x: np.bincount(x, minlength=ord("~")-ord(" ")+1), axis=0, arr=img)
     votes[0] = 0
+    avg_counts = np.mean(votes, axis=1)
+    # Remove outliers
+    votes = np.where(votes > avg_counts[:, None], votes, 0)
     img = np.argmax(votes, axis=0)
     img = img.tolist()
     transcription = [label2char(int(label)) for label in img]

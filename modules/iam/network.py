@@ -11,7 +11,7 @@ from .utils import ModePool2D
 _HIDDEN_SIZE = 768
 
 class SegLMIAM(UNETR):
-    def __init__(self, sw_batch_size=64, **kwargs):
+    def __init__(self, sw_batch_size=4, **kwargs):
         super().__init__(
             in_channels=2,
             out_channels=N_CLASSES, 
@@ -29,9 +29,9 @@ class SegLMIAM(UNETR):
             **kwargs
         )
         self.inferer = SlidingWindowInferer(roi_size=SPATIAL_SIZE, sw_batch_size=sw_batch_size, overlap=0.8)
-        self.pool1 = ModePool2D(kernel_size=5, stride=2, padding=1)
-        self.pool2 = ModePool2D(kernel_size=3, stride=1, padding=1)
-        self.pool3 = ModePool2D(kernel_size=3, stride=1, padding=1)
+        self.pool1 = ModePool2D(kernel_size=3, stride=2, padding=1)
+        self.pool2 = ModePool2D(kernel_size=3, stride=2, padding=1)
+        self.pool3 = ModePool2D(kernel_size=9, stride=1, padding=1)
 
     def __get_device(self):
         return next(self.parameters()).device
@@ -56,7 +56,7 @@ class SegLMIAM(UNETR):
                 images = load_transforms({"img": im_path})
                 images = pre_transforms(images)
                 images = images["img"]
-                print(images.shape)
+                print(images.shape, images.max(), images.min())
                 from matplotlib import pyplot as plt
                 plt.imshow(images[0])
                 images = images.unsqueeze(0)
@@ -88,7 +88,7 @@ class SegLMIAM(UNETR):
             outputs = outputs.argmax(dim=1, keepdim=True).float()
             outputs = self.pool1(outputs)
             outputs = self.pool2(outputs)
-            outputs = self.pool3(outputs)
+            # outputs = self.pool3(outputs)
 
         # remove channel dimension
         outputs = outputs.squeeze(-3)
