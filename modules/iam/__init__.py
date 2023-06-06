@@ -1,1 +1,1 @@
-from .network import SegLMIAM
+from .network import SegLMIAM, LightSegLMIAM
