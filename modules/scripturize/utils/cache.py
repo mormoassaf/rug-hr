@@ -8,10 +8,11 @@ class DictCache:
 
     def __init__(self, data: dict):
         self.data = data
-    
+
     def sample(self):
         choice = random.choice(list(self.data.keys()))
         return self.data[choice]
+
 
 """Load images from a directory into a DictCache object. 
 Args:
@@ -19,6 +20,8 @@ Args:
 Returns:
     DictCache: A DictCache object containing the images.
 """
+
+
 def cache_images(dir_path: str) -> DictCache:
     images = {}
     for filename in os.listdir(dir_path):

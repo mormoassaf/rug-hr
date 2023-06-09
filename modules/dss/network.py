@@ -1,4 +1,3 @@
-
 from monai.networks.nets import UNETR
 from .config import SPATIAL_SIZE, N_CLASSES
 import torch
@@ -7,6 +6,7 @@ import os
 from .transforms import load_transforms, pre_transforms
 from monai.inferers import SlidingWindowInferer
 from .utils import ModePool2D
+
 
 class SegLMDSS(UNETR):
     def __init__(self, sw_batch_size=64, **kwargs):
@@ -25,7 +25,8 @@ class SegLMDSS(UNETR):
             spatial_dims=2,
             **kwargs
         )
-        self.inferer = SlidingWindowInferer(roi_size=SPATIAL_SIZE, sw_batch_size=sw_batch_size, overlap=0.8)
+        self.inferer = SlidingWindowInferer(roi_size=SPATIAL_SIZE, sw_batch_size=sw_batch_size,
+                                            overlap=0.8)
         self.pool1 = ModePool2D(kernel_size=3, stride=1, padding=1)
         self.pool2 = ModePool2D(kernel_size=7, stride=1, padding=1)
         self.pool3 = ModePool2D(kernel_size=15, stride=1, padding=1)
@@ -45,7 +46,7 @@ class SegLMDSS(UNETR):
         Returns:
             numpy.array: output data of shape (n, classes, height, width)
         """
-        self.eval() # turns off dropout and batchnorm
+        self.eval()  # turns off dropout and batchnorm
 
         if im_path is not None:
             # check if is dir
@@ -64,7 +65,7 @@ class SegLMDSS(UNETR):
 
         if images is None:
             raise ValueError("Either images or im_path must be specified")
-        
+
         if isinstance(images, np.ndarray):
             images = torch.from_numpy(images)
             # add channel dimension
@@ -76,9 +77,9 @@ class SegLMDSS(UNETR):
         with torch.no_grad():
             images = images.to(self.__get_device())
             outputs = self.inferer(images, self)
-        
+
         # post process
-        if argmax:            
+        if argmax:
             outputs = outputs.argmax(dim=1, keepdim=True).float()
             outputs = self.pool1(outputs)
             outputs = self.pool2(outputs)
@@ -98,4 +99,3 @@ class SegLMDSS(UNETR):
             return outputs.cpu().numpy()
         else:
             raise ValueError(f"return_tensors must be one of ['pt', 'np'], got {return_tensors}")
-

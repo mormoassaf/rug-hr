@@ -1,4 +1,3 @@
-
 from scipy.ndimage import label, center_of_mass
 from scipy.spatial.distance import cdist
 import matplotlib.pyplot as plt
@@ -8,6 +7,7 @@ HEBREW_CHARS = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י",
                 "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ", "ק", "ר",
                 "ש", "ת", "ך", "ם", "ן", "ף", "ץ"]
 
+
 class Point:
     def __init__(self, x, y, label):
         self.x = x
@@ -16,6 +16,7 @@ class Point:
 
     def __repr__(self):
         return f'Point({self.x}, {self.y}, "{self.label}")'
+
 
 def walk_char(acc, i, j, visited_symbols=[], visited_acc=None):
     stack = [(i, j)]
@@ -86,6 +87,7 @@ def remove_ornaments(page, threshold=10):
     acc = acc.astype(np.uint8)
     return acc
 
+
 def find_centers_of_characters(img: np.ndarray, distance_threshold=0):
     unique_values = np.unique(img)
     unique_values = unique_values[unique_values != 0]  # Exclude background value (0)
@@ -122,6 +124,7 @@ def find_centers_of_characters(img: np.ndarray, distance_threshold=0):
 
     return points
 
+
 def construct_graph(points, dist_x=50, dist_y=250):
     graph = {}
     for u in points:
@@ -132,10 +135,11 @@ def construct_graph(points, dist_x=50, dist_y=250):
 
             d_x = abs(u.x - v.x)
             d_y = abs(u.y - v.y)
-            
+
             if d_x <= dist_x and d_y <= dist_y:
                 graph[u].append(v)
     return graph
+
 
 def plot_graph(img: np.ndarray, graph, label_to_color):
     plt.figure(figsize=(10, 10))  # Set the figure size, you can adjust this as needed
@@ -148,6 +152,7 @@ def plot_graph(img: np.ndarray, graph, label_to_color):
     # tick y every 50 pixels
     plt.yticks(np.arange(0, img.shape[0], 50))
     plt.show()  # show the plot
+
 
 def estimate_line_spacing(img):
     histogram = np.sum(img, axis=1)
@@ -176,8 +181,10 @@ def estimate_line_spacing(img):
 
     return line_spacing
 
+
 def transpose_points(points):
     return [Point(point.y, point.x, point.label) for point in points]
+
 
 def plot_lines(img: np.ndarray, lines, label_to_color):
     plt.figure(figsize=(10, 10))  # Set the figure size, you can adjust this as needed
@@ -193,6 +200,7 @@ def plot_lines(img: np.ndarray, lines, label_to_color):
 
     # plt.axis('off')  # remove the axis
     plt.show()  # show the plot
+
 
 def find_best_line(graph, line):
     """
@@ -210,7 +218,7 @@ def find_best_line(graph, line):
         if len(line) != 1:
             starting_points.append(line[-2])
         return starting_points
-    
+
     def point_in_bounds(point, line):
         # Line bounds for pruning 
         min_x = min([p.x for p in line])
@@ -233,19 +241,20 @@ def find_best_line(graph, line):
 
         prev_starting_points = starting_points
         starting_points = get_started_points(line)
-        
+
     return line
+
 
 def extract_lines_from_graph(graph):
     lines = []
     ranks = []
 
-    _graph = graph.copy()        
+    _graph = graph.copy()
     while len(_graph) > 0:
         # take point with max y
         starting_point = min(_graph.keys(), key=lambda p: p.x)
         # starting_point = random.choice(list(_graph.keys()))
-        line = find_best_line(_graph, [starting_point]) 
+        line = find_best_line(_graph, [starting_point])
         rank = np.mean([p.y for p in line])
         lines.append(line)
         ranks.append(rank)
@@ -263,6 +272,7 @@ def extract_lines_from_graph(graph):
 
     return lines
 
+
 def extract_lines(img):
     binary_image = np.where(img > 0, 1, 0)
     allowed_pixels = remove_ornaments(binary_image, set_adaptive_threshold(binary_image))
@@ -271,14 +281,15 @@ def extract_lines(img):
     line_spacing = estimate_line_spacing(image_without_ornaments)
 
     points = transpose_points(points)
-    graph = construct_graph(points, dist_x=img.shape[0]//4, dist_y=line_spacing*0.4)
+    graph = construct_graph(points, dist_x=img.shape[0] // 4, dist_y=line_spacing * 0.4)
     lines = extract_lines_from_graph(graph)
     lines = [transpose_points(line) for line in lines]
     return lines
 
+
 def transcribe_image(img):
     lines = extract_lines(img)
-    lines = [[HEBREW_CHARS[int(p.label)-1] for p in l] for l in lines]
+    lines = [[HEBREW_CHARS[int(p.label) - 1] for p in l] for l in lines]
     transcription = ["".join(l) for l in lines]
     transcription = "\n".join(transcription)
     return transcription

@@ -10,7 +10,7 @@ def sample_text_from_corpus(text_corpus, max_length=8192):
     if len(text_corpus) - max_length < 0:
         return text_corpus
     page = np.random.randint(0, len(text_corpus) - max_length)
-    text = text_corpus[page:page+max_length]
+    text = text_corpus[page:page + max_length]
     return text
 
 
@@ -38,24 +38,25 @@ def generate_dataset_sample(i, text_corpus, out_dir, file_alias="manu", save=Tru
 
 
 def generate_manuscript_dataset(
-        text_corpus: str, 
-        dataset_size=1024, 
-        out_dir="./datasets/generated_manuscripts", 
-        save=True, 
+        text_corpus: str,
+        dataset_size=1024,
+        out_dir="./datasets/generated_manuscripts",
+        save=True,
         parallel=True,
         *argc, **argv):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
         os.makedirs(os.path.join(out_dir, "Raw"))
         os.makedirs(os.path.join(out_dir, "Mutated"))
-        
+
     print("SCRIPTURIZE GENERATOR :: generating dataset...")
     if parallel:
         with ThreadPoolExecutor() as executor:
             dataset = list(
                 tqdm(
                     executor.map(
-                        lambda i: generate_dataset_sample(i, text_corpus, out_dir, save=save, *argc, **argv),
+                        lambda i: generate_dataset_sample(i, text_corpus, out_dir, save=save,
+                                                          *argc, **argv),
                         range(dataset_size)
                     ),
                     total=dataset_size,
@@ -64,6 +65,7 @@ def generate_manuscript_dataset(
     else:
         dataset = []
         for i in tqdm(range(dataset_size)):
-            dataset.append(generate_dataset_sample(i, text_corpus, out_dir, save=save, *argc, **argv))
+            dataset.append(
+                generate_dataset_sample(i, text_corpus, out_dir, save=save, *argc, **argv))
 
     return dataset

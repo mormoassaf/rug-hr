@@ -1,4 +1,3 @@
-
 #########################################################
 #                                                       #
 #   This file contains the SEGNET class, which is used  #
@@ -7,7 +6,7 @@
 #########################################################
 
 import numpy as np
-import torch 
+import torch
 from torch.utils.data import DataLoader
 import os
 import monai
@@ -22,14 +21,15 @@ from monai.transforms import (
 from tqdm import tqdm
 from .losses import ContrastiveLoss
 
+
 class VizBERTTrainer():
-    
-    def __init__(self, 
-        model_name, 
-        device, 
-        metric=None, 
-        max_sequence_length=256,
-        model=None) -> None:
+
+    def __init__(self,
+                 model_name,
+                 device,
+                 metric=None,
+                 max_sequence_length=256,
+                 model=None) -> None:
         # Properties 
         self.model_name = model_name
         self.device = device
@@ -42,7 +42,7 @@ class VizBERTTrainer():
 
     def __call__(self, x, batch_size=16):
         return self.predict(x, batch_size=batch_size)
-        
+
     def get_model(self):
         return self.model
 
@@ -74,19 +74,20 @@ class VizBERTTrainer():
         else:
             evaluate = monai.metrics.DiceMetric(include_background=True, reduction="mean")
         return evaluate
-        
+
     def train(
-        self,
-        trainloader: torch.utils.data.DataLoader,
-        valloader: torch.utils.data.DataLoader,
-        log,
-        epochs: int,
-        learning_rate=1e-4,
-        checkpoints=True,
-        schedule=False,
-        optimizer_name="adam",
+            self,
+            trainloader: torch.utils.data.DataLoader,
+            valloader: torch.utils.data.DataLoader,
+            log,
+            epochs: int,
+            learning_rate=1e-4,
+            checkpoints=True,
+            schedule=False,
+            optimizer_name="adam",
     ) -> None:
-        print(f"epochs={epochs}; N={len(trainloader.dataset)}; batches={len(trainloader)}; learning_rate={learning_rate}")
+        print(
+            f"epochs={epochs}; N={len(trainloader.dataset)}; batches={len(trainloader)}; learning_rate={learning_rate}")
 
         # Get model and loss function
         net = self.model
@@ -97,15 +98,17 @@ class VizBERTTrainer():
         if (optimizer_name == "adam"):
             optimizer = torch.optim.Adam(net.parameters(), lr=learning_rate)
         elif (optimizer_name == "rms"):
-            optimizer = torch.optim.RMSprop(net.parameters(), lr=learning_rate, weight_decay=1e-8, momentum=0.9)
+            optimizer = torch.optim.RMSprop(net.parameters(), lr=learning_rate, weight_decay=1e-8,
+                                            momentum=0.9)
         elif (optimizer_name == "adamw"):
             optimizer = torch.optim.AdamW(net.parameters(), lr=1e-4, weight_decay=1e-5)
         else:
             raise ValueError("Unknown optimizer")
 
         # Learning rate scheduler
-        lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2, min_lr=0.00001)
-        
+        lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2,
+                                                                  min_lr=0.00001)
+
         train_losses = []
         val_losses = []
         metrics = []
@@ -114,7 +117,7 @@ class VizBERTTrainer():
         best_metric_score = 0
         print(f"current best metric: {best_metric_score}")
 
-        for epoch in range(1, epochs+1):
+        for epoch in range(1, epochs + 1):
             net.train()
             avg_loss = 0.0
             n = 0
@@ -122,50 +125,53 @@ class VizBERTTrainer():
             # Load batches and apply passes
             epoch_iterator = tqdm(trainloader, dynamic_ncols=True)
             for step, batch in enumerate(epoch_iterator):
-                
                 images, labels = batch["image"].to(self.device), batch["label"].to(self.device)
-                
+
                 probabilities = net(images)
                 loss = criterion(probabilities, labels)
                 loss.backward()
                 optimizer.step()
                 optimizer.zero_grad()
                 avg_loss += loss.item()
-                n+=1
+                n += 1
 
             avg_loss /= n
-            
+
             # Evaluate
             test_loss, metric = self.validate(valloader)
             train_losses.append(avg_loss)
             val_losses.append(test_loss)
             metrics.append(metric)
-            
+
             # Update scheduler 
             if (schedule):
                 lr_scheduler.step(test_loss)
             lr = optimizer.param_groups[0]['lr']
 
             log({
-                "epoch": epoch, 
-                "loss_train": avg_loss, 
+                "epoch": epoch,
+                "loss_train": avg_loss,
                 "loss_test": test_loss,
                 "learning_rate": lr,
                 "metric": metric
             })
 
-            print("epoch {}/{}; train_loss={}; test_loss={}; lr={}; metric={}".format(epoch, epochs, avg_loss, test_loss, lr, metric))
-            
+            print(
+                "epoch {}/{}; train_loss={}; test_loss={}; lr={}; metric={}".format(epoch, epochs,
+                                                                                    avg_loss,
+                                                                                    test_loss, lr,
+                                                                                    metric))
+
             # Save model if it has improved
             if checkpoints and metric >= best_metric_score:
                 best_metric_score = metric
                 self.save_model()
-                    
+
         return train_losses, val_losses, metrics
 
     def validate(
-        self,
-        valloader: torch.utils.data.DataLoader,
+            self,
+            valloader: torch.utils.data.DataLoader,
     ):
         net = self.model
         net.eval()
@@ -176,11 +182,11 @@ class VizBERTTrainer():
 
         with torch.no_grad():
             for i, batch in tqdm(enumerate(valloader), total=len(valloader)):
-
                 images, labels = batch["image"].to(self.device), batch["label"].to(self.device)
                 probabilities = net(images)
                 loss += criterion(probabilities, labels).item()
-                metric += torch.nn.functional.cosine_similarity(probabilities, labels, dim=-1).mean()
+                metric += torch.nn.functional.cosine_similarity(probabilities, labels,
+                                                                dim=-1).mean()
                 n += batch["image"].shape[0]
 
         return loss / n, metric / n
