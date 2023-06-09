@@ -9,7 +9,6 @@ from tqdm import tqdm
 PATH_TO_DATASET = Path('./datasets/monkbrill2')
 PATH_TO_PROCESSED_DATASET = Path('./datasets/monkbrill2_processed')
 
-
 character_thresholds = {
     "Alef": 40,
     "Bet": 30,
@@ -69,7 +68,6 @@ char2token = {
     "ף": "Pe-final",
     "ץ": "Tsadi-final",
 }
-
 
 
 def jpg_to_binarized_array(jpg_file, threshold=0.5):
@@ -190,7 +188,7 @@ def process_dataset(thresholds_dict):
 
 
 def cache_char_dataset():
-    cache = {}        
+    cache = {}
 
     for letter_folder in tqdm(PATH_TO_PROCESSED_DATASET.iterdir()):
         if letter_folder.is_dir():
@@ -217,7 +215,6 @@ def sample_char(char: str, height: int, cache=None) -> np.ndarray:
 
 
 if __name__ == '__main__':
-
     # process_dataset(character_thresholds)  # Run only once
 
     char = np.random.choice(list(char2token.keys()))

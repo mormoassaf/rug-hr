@@ -22,7 +22,9 @@ class InferenceForm(BaseModel):
 
 @router.post("/financial-sentiment")
 def sentiment_analysis(info: InferenceForm) -> List[float]:
-    sentiment_pipeline = pipeline("sentiment-analysis", model=artifacts["model"]["finbert"], tokenizer=artifacts["tokenizer"]["finbert"], device=artifacts["device"])
+    sentiment_pipeline = pipeline("sentiment-analysis", model=artifacts["model"]["finbert"],
+                                  tokenizer=artifacts["tokenizer"]["finbert"],
+                                  device=artifacts["device"])
     predictions = sentiment_pipeline(info.sentences)
     return create_response(
         message="embedding constructed",
@@ -32,7 +34,9 @@ def sentiment_analysis(info: InferenceForm) -> List[float]:
 
 @router.post("/tweet-sentiment")
 def sentiment_analysis(info: InferenceForm) -> List[float]:
-    sentiment_pipeline = pipeline("sentiment-analysis", model=artifacts["model"]["bertweet"], tokenizer=artifacts["tokenizer"]["bertweet"], device=artifacts["device"])
+    sentiment_pipeline = pipeline("sentiment-analysis", model=artifacts["model"]["bertweet"],
+                                  tokenizer=artifacts["tokenizer"]["bertweet"],
+                                  device=artifacts["device"])
     predictions = sentiment_pipeline(info.sentences)
     return create_response(
         message="embedding constructed",

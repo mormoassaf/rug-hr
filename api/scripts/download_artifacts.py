@@ -20,6 +20,3 @@ for tokenizer_name in tokenizer_names.keys():
     label = tokenizer_names[tokenizer_name]
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
     tokenizer.save_pretrained(f"./app/artifacts/tokenizers/{label}")
-
-
-

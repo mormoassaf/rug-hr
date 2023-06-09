@@ -4,9 +4,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 def one_param(m):
     "get model first parameter"
     return next(iter(m.parameters()))
+
 
 class EMA:
     def __init__(self, beta):
@@ -39,7 +41,7 @@ class EMA:
 class SelfAttention(nn.Module):
     def __init__(self, channels):
         super(SelfAttention, self).__init__()
-        self.channels = channels        
+        self.channels = channels
         self.mha = nn.MultiheadAttention(channels, 4, batch_first=True)
         self.ln = nn.LayerNorm([channels])
         self.ff_self = nn.Sequential(
@@ -154,8 +156,8 @@ class UNetEncoder(nn.Module):
 
     def pos_encoding(self, t, channels):
         inv_freq = 1.0 / (
-            10000
-            ** (torch.arange(0, channels, 2, device=one_param(self).device).float() / channels)
+                10000
+                ** (torch.arange(0, channels, 2, device=one_param(self).device).float() / channels)
         )
         pos_enc_a = torch.sin(t.repeat(1, channels // 2) * inv_freq)
         pos_enc_b = torch.cos(t.repeat(1, channels // 2) * inv_freq)
@@ -186,5 +188,3 @@ class UNetEncoder(nn.Module):
         t = t.unsqueeze(-1)
         t = self.pos_encoding(t, self.time_dim)
         return self.unet_forwad(x, t)
-
-    

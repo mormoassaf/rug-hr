@@ -4,10 +4,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class SelfAttention(nn.Module):
     def __init__(self, channels, num_heads=4):
         super(SelfAttention, self).__init__()
-        self.channels = channels        
+        self.channels = channels
         self.mha = nn.MultiheadAttention(channels, num_heads, batch_first=True)
         self.ln = nn.LayerNorm([channels])
         self.ff_self = nn.Sequential(
@@ -19,12 +20,13 @@ class SelfAttention(nn.Module):
 
     def forward(self, x):
         batch, c, h, w = x.size()
-        x = x.view(batch, self.channels, h*w).swapaxes(1, 2)
+        x = x.view(batch, self.channels, h * w).swapaxes(1, 2)
         x_ln = self.ln(x)
         attention_value, _ = self.mha(x_ln, x_ln, x_ln)
         attention_value = attention_value + x
         # attention_value = self.ff_self(attention_value) + attention_value
         return attention_value.permute(0, 2, 1).view(batch, c, h, w)
+
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
@@ -97,7 +99,9 @@ class OutConv(nn.Module):
     def forward(self, x):
         return self.conv(x)
 
+
 """ Full assembly of the parts to form the complete network """
+
 
 class UNetBasicEncoder(nn.Module):
     def __init__(self, in_channels, bilinear=False):

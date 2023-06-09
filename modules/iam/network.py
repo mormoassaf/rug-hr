@@ -1,4 +1,3 @@
-
 from monai.networks.nets import UNETR, UNet
 from .config import SPATIAL_SIZE, N_CLASSES
 import torch
@@ -10,16 +9,17 @@ from .utils import ModePool2D
 
 _HIDDEN_SIZE = 768
 
+
 class SegLMIAM(UNETR):
     def __init__(self, sw_batch_size=4, **kwargs):
         super().__init__(
             in_channels=2,
-            out_channels=N_CLASSES, 
+            out_channels=N_CLASSES,
             img_size=SPATIAL_SIZE,
             feature_size=32,
             num_heads=12,
             hidden_size=_HIDDEN_SIZE,
-            mlp_dim=4*_HIDDEN_SIZE,
+            mlp_dim=4 * _HIDDEN_SIZE,
             pos_embed="perceptron",
             norm_name="instance",
             res_block=True,
@@ -28,7 +28,8 @@ class SegLMIAM(UNETR):
             conv_block=False,
             **kwargs
         )
-        self.inferer = SlidingWindowInferer(roi_size=SPATIAL_SIZE, sw_batch_size=sw_batch_size, overlap=0.8)
+        self.inferer = SlidingWindowInferer(roi_size=SPATIAL_SIZE, sw_batch_size=sw_batch_size,
+                                            overlap=0.8)
         self.pool1 = ModePool2D(kernel_size=3, stride=1, padding=1)
         self.pool2 = ModePool2D(kernel_size=3, stride=1, padding=1)
         self.pool3 = ModePool2D(kernel_size=3, stride=1, padding=1)
@@ -48,7 +49,7 @@ class SegLMIAM(UNETR):
         Returns:
             numpy.array: output data of shape (n, classes, height, width)
         """
-        self.eval() # turns off dropout and batchnorm
+        self.eval()  # turns off dropout and batchnorm
 
         if im_path is not None:
             # check if is dir
@@ -70,7 +71,7 @@ class SegLMIAM(UNETR):
 
         if images is None:
             raise ValueError("Either images or im_path must be specified")
-        
+
         if isinstance(images, np.ndarray):
             images = torch.from_numpy(images)
             # add channel dimension
@@ -82,9 +83,9 @@ class SegLMIAM(UNETR):
         with torch.no_grad():
             images = images.to(self.__get_device())
             outputs = self.inferer(images, self)
-        
+
         # post process
-        if argmax:            
+        if argmax:
             outputs = outputs.argmax(dim=1, keepdim=True).float()
             outputs = self.pool1(outputs)
             outputs = self.pool2(outputs)
@@ -104,8 +105,9 @@ class SegLMIAM(UNETR):
         else:
             raise ValueError(f"return_tensors must be one of ['pt', 'np'], got {return_tensors}")
 
+
 class LightSegLMIAM(UNet):
-    def __init__(self,**kwargs):
+    def __init__(self, **kwargs):
         super().__init__(
             dimensions=2,
             in_channels=2,
@@ -137,7 +139,7 @@ class LightSegLMIAM(UNet):
         Returns:
             numpy.array: output data of shape (n, classes, height, width)
         """
-        self.eval() # turns off dropout and batchnorm
+        self.eval()  # turns off dropout and batchnorm
 
         if im_path is not None:
             # check if is dir
@@ -159,7 +161,7 @@ class LightSegLMIAM(UNet):
 
         if images is None:
             raise ValueError("Either images or im_path must be specified")
-        
+
         if isinstance(images, np.ndarray):
             images = torch.from_numpy(images)
             # add channel dimension
@@ -171,9 +173,9 @@ class LightSegLMIAM(UNet):
         with torch.no_grad():
             images = images.to(self.__get_device())
             outputs = self.inferer(images, self)
-        
+
         # post process
-        if argmax:            
+        if argmax:
             outputs = outputs.argmax(dim=1, keepdim=True).float()
             outputs = self.pool1(outputs)
             outputs = self.pool2(outputs)
@@ -192,4 +194,3 @@ class LightSegLMIAM(UNet):
             return outputs.cpu().numpy()
         else:
             raise ValueError(f"return_tensors must be one of ['pt', 'np'], got {return_tensors}")
-

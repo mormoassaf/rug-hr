@@ -14,9 +14,11 @@ from monai.transforms import (
 )
 import torch
 
+
 class Invert(Transform):
     def __call__(self, data, max_value=1.0, min_value=0.0):
         return max_value - data + min_value
+
 
 class Invertd(MapTransform):
     def __init__(self, keys):
@@ -29,6 +31,7 @@ class Invertd(MapTransform):
             d[key] = self.invert(d[key])
         return d
 
+
 class Binarize(Transform):
     def __init__(self, threshold=0.5):
         self.threshold = threshold
@@ -38,7 +41,8 @@ class Binarize(Transform):
         data[data >= threshold] = 1.0
         data[data < threshold] = 0.0
         return data
-    
+
+
 class Binarized(MapTransform):
     def __init__(self, keys, *args, **kwargs):
         super().__init__(keys)
@@ -49,13 +53,15 @@ class Binarized(MapTransform):
         for key in self.keys:
             d[key] = self.binarize(d[key])
         return d
-    
+
+
 class MaxPool(Transform):
     def __init__(self, *args, **kwargs):
         self.pool = torch.nn.MaxPool2d(*args, **kwargs)
 
     def __call__(self, data):
         return self.pool(data)
+
 
 class MaxPoold(MapTransform):
     def __init__(self, keys, *args, **kwargs):
@@ -67,6 +73,7 @@ class MaxPoold(MapTransform):
         for key in self.keys:
             d[key] = self.pool(d[key])
         return d
+
 
 load_transforms = Compose([
     LoadImaged(keys=["img"]),
