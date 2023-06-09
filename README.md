@@ -28,3 +28,18 @@ The download links for the models are in the setup.py file. You can download the
 Models can also be obtained on Google drive:
 - `seglm-v1-256x256-dss.pt`: https://drive.google.com/u/1/uc?id=15tu0ucEtM2anjKGHBJt70_ro7HUVHxS_&export=download
 - `seglm-masked-v1-128x1024-iam.pt`: https://drive.google.com/u/1/uc?id=1vWecIuCPiPKSJO1I1hkS5a3SySvLKnyq&export=download
+
+
+## Usage
+```bash
+conda activate handrec
+```
+
+To make the transcriptions run our interactive script:
+```bash
+python transcribe.py
+```
+
+If the script fails you may interact with our notebooks in:
+- ./experiments/iam_eval.ipynb
+- ./experiments/dss_eval.ipynb
