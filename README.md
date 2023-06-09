@@ -41,5 +41,5 @@ python transcribe.py
 ```
 
 If the script fails you may interact with our notebooks in:
-- ./experiments/iam_eval.ipynb
-- ./experiments/dss_eval.ipynb
+- [iam_eval.ipynb](./experiments/iam_eval.ipynb)
+- [dss_eval.ipynb](./experiments/dss_eval.ipynb)
