@@ -57,9 +57,9 @@ class SegLMIAM(UNETR):
                 images = load_transforms({"img": im_path})
                 images = pre_transforms(images)
                 images = images["img"]
-                print(images.shape, images.max(), images.min())
-                from matplotlib import pyplot as plt
-                plt.imshow(images[0])
+                # print(images.shape, images.max(), images.min())
+                # from matplotlib import pyplot as plt
+                # plt.imshow(images[0])
                 images = images.unsqueeze(0)
             else:
                 image_paths = [os.path.join(im_path, f) for f in os.listdir(im_path)]
