@@ -9,6 +9,13 @@ from modules.iam.postprocessing import transcribe_image as transcribe_image_iam
 from modules.dss import SegLMDSS
 from modules.dss.postprocessing import transcribe_image as transcribe_image_dss
 
+print("HandRec - Handwritten Text Recognition")
+print("======================================")
+print("This program will transcribe a set of images using a pre-trained model.")
+print("DSS: Dead Sea Scrolls")
+print("IAM: IAM Handwriting Database")
+print("======================================")
+
 
 if not torch.cuda.is_available():
     print("WARNING: CUDA was not detected, using CPU instead.")
