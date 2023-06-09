@@ -5,7 +5,11 @@ import requests
 ARTIFACT_REPISOTRY = [
     {
         "name": "seglm-v1-256x256-dss.pt",
-        "url": "https://drive.google.com/uc?export=download&id=15tu0ucEtM2anjKGHBJt70_ro7HUVHxS_",
+        "url": "https://filesender.surf.nl/download.php?token=b8114803-d044-4307-832b-12fbab46c140&files_ids=14269265",
+    },
+    {
+        "name": "seglm-v1-256x256-iam.pt",
+        "url": "https://filesender.surf.nl/download.php?token=b8114803-d044-4307-832b-12fbab46c140&files_ids=14269261"
     }
 ]
 
