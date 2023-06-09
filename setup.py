@@ -8,7 +8,7 @@ ARTIFACT_REPISOTRY = [
         "url": "https://filesender.surf.nl/download.php?token=b8114803-d044-4307-832b-12fbab46c140&files_ids=14269265",
     },
     {
-        "name": "seglm-v1-256x256-iam.pt",
+        "name": "seglm-masked-v1-128x1024-iam.pt",
         "url": "https://filesender.surf.nl/download.php?token=b8114803-d044-4307-832b-12fbab46c140&files_ids=14269261"
     }
 ]
@@ -33,7 +33,7 @@ def setup_conda():
     check_list = str(os.system("conda env list"))
     if "handrec" in check_list:
         return
-    os.system("conda env create -f environment.yml")
+    os.system("conda env create -f environment.yaml")
     os.system("conda activate handrec")
 
 def setup():

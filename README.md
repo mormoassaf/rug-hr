@@ -10,7 +10,7 @@ Run the following command
 ```bash
 python setup.py
 ```
-This will download the model artifacts and setup the conda environment `handrec`.
+This will download the model artifacts and setup the conda environment `handrec`. The models are downloaded from filesender.surf, and the links expires on 30/06/2023.
 
 **PLEASE NOTE**: 
 - The model artifacts are large and may take a while to download.
