@@ -1,4 +1,4 @@
-# Handwriting Recognition 2022
+# Handwriting Recognition 2023
 
 ## Requirements
 
